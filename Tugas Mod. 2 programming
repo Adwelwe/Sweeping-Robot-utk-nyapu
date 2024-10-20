@@ -1,1 +1,141 @@
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <cmath>
+#include <string>
+
+using namespace std;
+
+// class untuk merepresentasikan vektor 2D
+class vector2d {
+public:
+    double x, y;
+
+    vector2d(double x = 0, double y = 0) : x(x), y(y) {}
+
+    double distance(const vector2d& other) const {
+        return sqrt(pow(other.x - x, 2) + pow(other.y - y, 2));
+    }
+};
+
+// class untuk merepresentasikan sendi robot
+class sendi {
+public:
+    double angle; // Sudut dalam radian
+    double length; // Panjang sendi
+
+    sendi(double angle = 0, double length = 1) : angle(angle), length(length) {}
+
+    vector2d calculatePosition() const {
+        return vector2d(length * cos(angle), length * sin(angle));
+    }
+};
+
+// class untuk merepresentasikan alat penyapu
+class Sweeper {
+public:
+    void sapu() {
+        cout << "Sweeping the area..." << endl;
+    }
+};
+
+// class untuk merepresentasikan robot
+class Robot {
+public:
+    vector <sendi> sendi_2; // Daftar sendi
+    Sweeper sweeper; // Alat penyapu
+
+    // Metode untuk menghitung IK (Inverse Kinematics)
+    void inverseKinematics(const vector2d& target) {
+        // Implementasi IK sederhana
+        for (size_t i = 0; i < sendi_2.size(); ++i) {
+            sendi_2[i].angle = atan2(target.y, target.x) - (i * (M_PI / 4));
+        }
+    }
+
+    // Metode untuk menggerakkan robot
+    void move(const vector2d& target) {
+        cout << "Moving to (" << target.x << ", " << target.y << ")" << endl;
+        // Hitung posisi dan lakukan aksi menyapu
+        sweeper.sapu();
+    }
+
+    // Metode untuk memuat konfigurasi robot dari file
+    void load_Config(const string& filename) {
+        ifstream file(filename);
+        if (!file.is_open()) {
+            cerr << "Error opening file: " << filename << endl;
+            return;
+        }
+        int CountSendi;
+        file >> CountSendi; // Membaca jumlah sendi
+        for (int i = 0; i < CountSendi; ++i) {
+            double angle, length;
+            file >> angle >> length; // Membaca sudut dan panjang sendi
+            sendi_2.push_back(sendi(angle, length));
+        }
+        file.close();
+    }
+};
+
+// class untuk merepresentasikan lingkungan
+class Environment {
+public:
+    vector<vector<char>> grid; // Peta lingkungan
+
+    // Metode untuk memuat peta dari file
+    void load_Map(const string& filename) {
+        ifstream file(filename);
+        if (!file.is_open()) {
+            cerr << "Error opening file: " << filename << endl;
+            return;
+        }
+        string line;
+        while (getline(file, line)) {
+            vector<char> row(line.begin(), line.end());
+            grid.push_back(row);
+        }
+        file.close();
+    }
+
+    // Metode untuk menampilkan lingkungan
+    void tampilkan() {
+        for (const auto& row : grid) {
+            for (char cell : row) {
+                cout << cell << " ";
+            }
+            cout << endl;
+        }
+    }
+};
+
+int main() {
+    // Inisialisasi robot dan lingkungan
+    Robot robot;
+    Environment env;
+
+    // load konfigurasi robot dan peta dari file
+    robot.load_Config("robot_config.txt");
+    env.load_Map("map.txt");
+
+    // Target posisi untuk menyapu
+    vector2d target(2.0, 2.0);
+
+    // Simulasi
+    while (true) {
+        // Hitung IK untuk mencapai tujuan
+        robot.inverseKinematics(target);
+
+        // menggerakan robot
+        robot.move(target);
+
+        // untuk menampilkan lingkungan di terminal
+        env.tampilkan();
+
+        // Tambahkan logika untuk menghentikan loop sesuai kebutuhan
+        break; // Hanya untuk menghindari loop tak terhingga dalam contoh ini
+    }
+
+    return 0;
+}
 
